@@ -64,10 +64,15 @@ func main() {
 					}
 					fmt.Println("Crawling...")
 
-					fmt.Println(scrapeTabelog("tokyo"))
+					shops := scrapeTabelog("tokyo")
+					err = db.InsertShops(shops)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+						os.Exit(1)
+					}
 
-					//sig := <-sigChan
-					//fmt.Printf("\nReceived signal: %v\n", sig)
+					sig := <-sigChan
+					fmt.Printf("\nReceived signal: %v\n", sig)
 
 					return nil
 				},
@@ -113,8 +118,8 @@ func scrapeTabelog(location string) []model.Shop {
 	var shops []model.Shop
 	c.OnHTML("h3.list-rst__rst-name a.list-rst__rst-name-target", func(e *colly.HTMLElement) {
 		shop := model.Shop{
-			Name: e.Text,
-			Link: e.Attr("href"),
+			Name:       e.Text,
+			TabelogURL: e.Attr("href"),
 		}
 		//e.Request.Visit(e.Attr("href"))
 		shops = append(shops, shop)
@@ -139,6 +144,9 @@ func scrapeTabelog(location string) []model.Shop {
 		log.Fatal(err)
 	}
 	c.Wait()
+
+	fmt.Println("Found", len(shops), "shops")
+	fmt.Println(shops)
 
 	return shops
 }

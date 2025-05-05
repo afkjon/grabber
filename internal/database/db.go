@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/afkjon/grabber/internal/model"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -18,7 +19,9 @@ func Connect() error {
 	if pool != nil {
 		return nil
 	}
-	pool, err := pgxpool.New(context.Background(), DATABASE_URL)
+
+	var err error
+	pool, err = pgxpool.New(context.Background(), DATABASE_URL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
 		os.Exit(1)
@@ -31,7 +34,7 @@ func Connect() error {
 		os.Exit(1)
 	}
 
-	fmt.Print("Connected to database")
+	fmt.Println("Connected to database")
 	return nil
 }
 
@@ -54,4 +57,34 @@ func GetPendingJobs() ([]any, error) {
 	}
 
 	return rows.Values()
+}
+
+func InsertShops(shopList []model.Shop) error {
+	if shopList == nil {
+		return fmt.Errorf("no shops to insert")
+	}
+	if pool == nil {
+		return fmt.Errorf("not connected to database")
+	}
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "acquire failed: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Release()
+
+	for _, shop := range shopList {
+		fmt.Printf("Inserting shop: %v\n", shop)
+		_, err = conn.Exec(
+			context.Background(),
+			"INSERT INTO shops (name, address, tabelog_url) VALUES ($1, $2, $3)",
+			shop.Name, shop.Address, shop.TabelogURL,
+		)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed at inserting shop: %[1]v %[2]v\n", shop, err)
+			os.Exit(1)
+		}
+	}
+
+	return nil
 }
