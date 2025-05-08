@@ -79,14 +79,39 @@ func InsertShops(shopList []model.Shop) error {
 		fmt.Printf("Inserting shop: %v\n", shop)
 		_, err = conn.Exec(
 			context.Background(),
-			"INSERT INTO shops (name, address, tabelog_url) VALUES ($1, $2, $3)",
-			shop.Name, shop.Address, shop.TabelogURL,
+			"INSERT INTO shops (name, address, tabelog_url, city_id, price, station, station_distance) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+			shop.Name, shop.Address, shop.TabelogURL, shop.CityId, shop.Price, shop.Station, shop.StationDistance,
 		)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed at inserting shop: %[1]v %[2]v\n", shop, err)
-			os.Exit(1)
 		}
 	}
+
+	return nil
+}
+
+func UpdateShop(shop model.Shop) error {
+	if pool == nil {
+		return fmt.Errorf("not connected to database")
+	}
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "acquire failed: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Release()
+
+	_, err = conn.Exec(
+		context.Background(),
+		"UPDATE shops SET name = $1, address = $2, city_id = $3, price = $4, station = $5, station_distance = $6 WHERE tabelog_url = $7",
+		shop.Name, shop.Address, shop.CityId, shop.Price, shop.Station, shop.StationDistance, shop.TabelogURL,
+	)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed at updating shop: %[1]v %[2]v\n", shop, err)
+		return err
+	}
+	fmt.Printf("Updated shop: %v\n", shop)
 
 	return nil
 }

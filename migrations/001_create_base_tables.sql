@@ -41,8 +41,11 @@ CREATE TABLE IF NOT EXISTS shops (
     id SERIAL PRIMARY KEY, 
     name TEXT NOT NULL,
     city_id INT,
+    price TEXT,
+    station TEXT,
+    station_distance TEXT,
     address TEXT,
-    tabelog_url TEXT NOT NULL,
+    tabelog_url TEXT UNIQUE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     update_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_cities

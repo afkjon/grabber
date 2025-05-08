@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -71,6 +72,9 @@ func main() {
 						fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 						os.Exit(1)
 					}
+					for _, shop := range shops {
+						scrapeAddressFromTabelogPage(shop)
+					}
 
 					sig := <-sigChan
 					fmt.Printf("\nReceived signal: %v\n", sig)
@@ -117,13 +121,20 @@ func scrapeTabelog(location string) []model.Shop {
 	c.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: 2})
 
 	var shops []model.Shop
-	c.OnHTML("h3.list-rst__rst-name a.list-rst__rst-name-target", func(e *colly.HTMLElement) {
-		shop := model.Shop{
-			Name:       e.Text,
-			TabelogURL: e.Attr("href"),
-		}
-		//e.Request.Visit(e.Attr("href"))
-		shops = append(shops, shop)
+
+	c.OnHTML("div.list-rst__rst-data", func(e *colly.HTMLElement) {
+		areaText := strings.Split(e.ChildText(".list-rst__area-genre"), " ")
+		station := areaText[0]
+		dist := areaText[1]
+
+		shops = append(shops, model.Shop{
+			Name:            e.ChildText("h3.list-rst__rst-name a.list-rst__rst-name-target"),
+			TabelogURL:      e.ChildAttr("a.list-rst__rst-name-target", "href"),
+			Price:           e.ChildText("span.c-rating-v3__val"),
+			Station:         station,
+			StationDistance: dist,
+			CityId:          1,
+		})
 	})
 
 	c.OnRequest(func(r *colly.Request) {
@@ -150,7 +161,36 @@ func scrapeTabelog(location string) []model.Shop {
 	c.Wait()
 
 	fmt.Println("Found", len(shops), "shops")
-	fmt.Println(shops)
 
 	return shops
+}
+
+func scrapeAddressFromTabelogPage(shop model.Shop) {
+	c := colly.NewCollector(
+		colly.Async(true),
+		colly.MaxDepth(1),
+	)
+
+	c.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: 2})
+
+	c.OnHTML("p.rstinfo-table__address", func(e *colly.HTMLElement) {
+		shop.Address = e.Text
+	})
+
+	c.OnRequest(func(r *colly.Request) {
+		fmt.Println("Visiting", r.URL.String())
+	})
+
+	// Callback for when scraping is finished
+	c.OnScraped(func(r *colly.Response) {
+		fmt.Println("Finished scraping:", r.Request.URL)
+	})
+
+	err := c.Visit(shop.TabelogURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	c.Wait()
+
+	db.UpdateShop(shop)
 }

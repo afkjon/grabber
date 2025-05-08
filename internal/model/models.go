@@ -14,10 +14,13 @@ type Job struct {
 }
 
 type Shop struct {
-	ID         string `db:"shop_id"`
-	Name       string
-	Address    string
-	TabelogURL string `db:"link"`
-	Price      string
-	JobID      string `db:"job_id"`
+	ID              int `db:"shop_id"`
+	Name            string
+	Address         string
+	TabelogURL      string `db:"link"`
+	Station         string
+	StationDistance string
+	Price           string
+	CityId          int
+	JobID           string `db:"job_id"`
 }
