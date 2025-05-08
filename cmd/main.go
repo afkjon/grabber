@@ -15,6 +15,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+// main is the entry point for the application
 func main() {
 	cli.VersionFlag = &cli.BoolFlag{
 		Name:    "print-version",
@@ -134,11 +135,14 @@ func scrapeTabelog(location string) []model.Shop {
 		fmt.Println("Finished scraping:", r.Request.URL)
 	})
 
+	//todo: refactor defaults
 	if location == "" {
 		location = "tokyo"
 	}
 
-	url := fmt.Sprintf(`https://tabelog.com/%srstLst/?vs=1&sa=&sk=ramen&lid=top_navi1&vac_net=&svd=20250505&svt=2000&svps=2&hfc=1&sw=ramen`, location+"/")
+	var date = time.Now().Format("20060102")
+
+	url := fmt.Sprintf(`https://tabelog.com/%[1]srstLst/?vs=1&sa=&sk=ramen&lid=top_navi1&vac_net=&svd=%[2]s&svt=2000&svps=2&hfc=1&sw=ramen`, location+"/", date)
 	err := c.Visit(url)
 	if err != nil {
 		log.Fatal(err)

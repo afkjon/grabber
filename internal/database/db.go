@@ -9,12 +9,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// urlExample := "postgres://username:password@localhost:5432/database_name"
+// DATABASE_URL is the connection string to the database
 const DATABASE_URL = "postgres://postgres:pg@localhost:5432/noodle_strainer?sslmode=disable"
 
+// pool is the connection pool to the database
 var pool *pgxpool.Pool
 
-// Connect is a function that creates a connection pool to the database
+// Connect creates a connection pool to the database
 func Connect() error {
 	if pool != nil {
 		return nil
@@ -38,7 +39,7 @@ func Connect() error {
 	return nil
 }
 
-// GetPendingJobs is a function that returns a pending job from the database
+// GetPendingJobs returns a pending job from the database
 func GetPendingJobs() ([]any, error) {
 	if pool == nil {
 		return nil, fmt.Errorf("not connected to database")
@@ -59,6 +60,7 @@ func GetPendingJobs() ([]any, error) {
 	return rows.Values()
 }
 
+// InsertShops inserts a list of shops into the database
 func InsertShops(shopList []model.Shop) error {
 	if shopList == nil {
 		return fmt.Errorf("no shops to insert")
