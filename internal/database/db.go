@@ -90,6 +90,8 @@ func InsertShops(shopList []model.Shop) error {
 	return nil
 }
 
+// UpdateShop updates a shop in the database
+// UpdateShop uses the tabelog_url as the unique identifier
 func UpdateShop(shop model.Shop) error {
 	if pool == nil {
 		return fmt.Errorf("not connected to database")

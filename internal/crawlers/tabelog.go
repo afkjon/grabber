@@ -11,7 +11,7 @@ import (
 	"github.com/gocolly/colly"
 )
 
-// scrapeTabelog scrapes Tabelog for shops
+// ScrapeTabelog scrapes Tabelog for shops
 func ScrapeTabelog(location string) []model.Shop {
 	c := colly.NewCollector(
 		colly.Async(true),
@@ -65,6 +65,8 @@ func ScrapeTabelog(location string) []model.Shop {
 	return shops
 }
 
+// ScrapeAddressFromTabelogPage scrapes the address from the Tabelog page
+// then updates the shop in the database
 func ScrapeAddressFromTabelogPage(shop model.Shop) {
 	c := colly.NewCollector(
 		colly.Async(true),
