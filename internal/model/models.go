@@ -21,6 +21,6 @@ type Shop struct {
 	Station         string
 	StationDistance string
 	Price           string
-	CityId          int
+	Prefecture      string
 	JobID           string `db:"job_id"`
 }

@@ -33,7 +33,7 @@ func ScrapeTabelog(location string) []model.Shop {
 			Price:           e.ChildText("span.c-rating-v3__val"),
 			Station:         station,
 			StationDistance: dist,
-			CityId:          1,
+			Prefecture:      location,
 		})
 	})
 

@@ -79,8 +79,8 @@ func InsertShops(shopList []model.Shop) error {
 		fmt.Printf("Inserting shop: %v\n", shop)
 		_, err = conn.Exec(
 			context.Background(),
-			"INSERT INTO shops (name, address, tabelog_url, city_id, price, station, station_distance) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-			shop.Name, shop.Address, shop.TabelogURL, shop.CityId, shop.Price, shop.Station, shop.StationDistance,
+			"INSERT INTO shops (name, address, tabelog_url, prefecture, price, station, station_distance) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+			shop.Name, shop.Address, shop.TabelogURL, shop.Prefecture, shop.Price, shop.Station, shop.StationDistance,
 		)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed at inserting shop: %[1]v %[2]v\n", shop, err)
@@ -105,8 +105,8 @@ func UpdateShop(shop model.Shop) error {
 
 	_, err = conn.Exec(
 		context.Background(),
-		"UPDATE shops SET name = $1, address = $2, city_id = $3, price = $4, station = $5, station_distance = $6 WHERE tabelog_url = $7",
-		shop.Name, shop.Address, shop.CityId, shop.Price, shop.Station, shop.StationDistance, shop.TabelogURL,
+		"UPDATE shops SET name = $1, address = $2, prefecture = $3, price = $4, station = $5, station_distance = $6 WHERE tabelog_url = $7",
+		shop.Name, shop.Address, shop.Prefecture, shop.Price, shop.Station, shop.StationDistance, shop.TabelogURL,
 	)
 
 	if err != nil {
