@@ -52,7 +52,7 @@ func main() {
 						},
 					},
 				*/
-				Action: func(context.Context, *cli.Command) error {
+				Action: func(ctx context.Context, cmd *cli.Command) error {
 					// Notify channel for specific signals
 					sigChan := make(chan os.Signal, 1)
 					signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -62,9 +62,11 @@ func main() {
 						fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 						os.Exit(1)
 					}
-					fmt.Println("Crawling...")
 
-					shops := crawlers.ScrapeTabelog("tokyo")
+					var location = cmd.Args().Get(0)
+					fmt.Println("Crawling for shops at " + location)
+
+					shops := crawlers.ScrapeTabelog(location)
 					err = db.InsertShops(shops)
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -73,9 +75,8 @@ func main() {
 					for _, shop := range shops {
 						crawlers.ScrapeAddressFromTabelogPage(shop)
 					}
-
-					sig := <-sigChan
-					fmt.Printf("\nReceived signal: %v\n", sig)
+					//sig := <-sigChan
+					//fmt.Printf("\nReceived signal: %v\n", sig)
 
 					return nil
 				},
