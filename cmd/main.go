@@ -11,6 +11,7 @@ import (
 
 	"github.com/afkjon/grabber/internal/crawlers"
 	db "github.com/afkjon/grabber/internal/database"
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v3"
 )
 
@@ -20,6 +21,12 @@ func main() {
 		Name:    "print-version",
 		Aliases: []string{"v"},
 		Usage:   "print only the version",
+	}
+
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file")
+		os.Exit(1)
 	}
 
 	cmd := &cli.Command{
@@ -62,6 +69,7 @@ func main() {
 						fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 						os.Exit(1)
 					}
+					defer db.Close()
 
 					var location = cmd.Args().Get(0)
 					fmt.Println("Crawling for shops at " + location)
@@ -77,6 +85,21 @@ func main() {
 					}
 					//sig := <-sigChan
 					//fmt.Printf("\nReceived signal: %v\n", sig)
+
+					return nil
+				},
+			},
+			{
+				Name:  "geocode",
+				Usage: "Format addresses",
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					fmt.Println("Geocoding addresses for shops in database")
+
+					err := crawlers.GeocodeAddresses()
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+						os.Exit(1)
+					}
 
 					return nil
 				},

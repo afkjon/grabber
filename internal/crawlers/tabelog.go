@@ -53,10 +53,13 @@ func ScrapeTabelog(location string) []model.Shop {
 
 	var date = time.Now().Format("20060102")
 
-	url := fmt.Sprintf(`https://tabelog.com/%[1]srstLst/?vs=1&sa=&sk=ramen&lid=top_navi1&vac_net=&svd=%[2]s&svt=2000&svps=2&hfc=1&sw=ramen`, location+"/", date)
-	err := c.Visit(url)
-	if err != nil {
-		log.Fatal(err)
+	var keywords = []string{"ラーメン", "中華そば", "家系", "二郎", "喜多方", "麺", "つけ麺", "博多ラーメン", "鳥白湯", "豚骨"}
+	for _, keyword := range keywords {
+		url := fmt.Sprintf(`https://tabelog.com/%[1]srstLst/?vs=1&sa=&sk=%[2]s&lid=top_navi1&vac_net=&svd=%[3]s&svt=2000&svps=2&hfc=1&sw=%[2]s`, location+"/", keyword, date)
+		err := c.Visit(url)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	c.Wait()
 

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -116,4 +117,88 @@ func UpdateShop(shop model.Shop) error {
 	fmt.Printf("Updated shop: %v\n", shop)
 
 	return nil
+}
+
+// Close closes the connection pool
+func Close() error {
+	if pool == nil {
+		return fmt.Errorf("not connected to database")
+	}
+	pool.Close()
+	return nil
+}
+
+// GetShops returns all shops from the database
+func GetShopsPendingGeocoding() ([]model.Shop, error) {
+	if pool == nil {
+		return nil, fmt.Errorf("not connected to database")
+	}
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "acquire failed: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Release()
+
+	rows, err := conn.Query(context.Background(), "SELECT id, address, is_geocoded FROM shops WHERE is_geocoded = FALSE LIMIT 1000")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	shops := []model.Shop{}
+	for rows.Next() {
+		var shop model.Shop
+		err = rows.Scan(&shop.ID, &shop.Address, &shop.IsGeocoded)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
+			os.Exit(1)
+		}
+		shops = append(shops, shop)
+	}
+
+	return shops, nil
+}
+
+// UpdateLocation updates the database with geocoded data
+func UpdateLocation(id int, geoData *model.GoogleGeocodeResponseResultLocation, fullResponse json.RawMessage) error {
+	if pool == nil {
+		return fmt.Errorf("not connected to database")
+	}
+
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		return fmt.Errorf("acquire failed: %v\n", err)
+	}
+	defer conn.Release()
+
+	// Start a transaction
+	tx, err := conn.Begin(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(context.Background()) // Rollback on error
+
+	// Prepare the statement
+	_, err = tx.Prepare(context.Background(), "update_shop",
+		`
+		UPDATE shops
+		SET latitude = $1,
+			longitude = $2,
+			location_type = $3,
+			full_api_response = $4,
+			is_geocoded = TRUE
+		WHERE id = $5
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare update statement: %w", err)
+	}
+
+	// Execute the update
+	_, err = tx.Exec(context.Background(), "update_shop", geoData.Lat, geoData.Lng, geoData.LocationType, fullResponse, id)
+	if err != nil {
+		return fmt.Errorf("failed to execute update for ID %d: %w", id, err)
+	}
+
+	return tx.Commit(context.Background()) // Commit the transaction
 }
